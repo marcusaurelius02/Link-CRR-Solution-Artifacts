@@ -37,16 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const supportChartCanvas = document.getElementById('support-chart');
     const topFilesChartCanvas = document.getElementById('top-files-chart');
     const issueCoverageChartCanvas = document.getElementById('issue-coverage-chart');
-    const toggleDashboardBtn = document.createElement('button'); // Dynamically created or use existing
-    toggleDashboardBtn.textContent = 'Collapse';
-    toggleDashboardBtn.className = 'minimize-btn';
-
-    // Add toggle button to modal header if not present
-    const dashboardHeader = dashboardModal.querySelector('.dashboard-header');
-    if (dashboardHeader && !document.getElementById('toggle-dashboard-btn')) {
-        toggleDashboardBtn.id = 'toggle-dashboard-btn';
-        dashboardHeader.insertBefore(toggleDashboardBtn, closeModalBtn);
-    }
 
     const dashboardContainer = document.getElementById('dashboard-container');
 
@@ -61,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
         { dataKey: 'Out of scope', header: 'Out of Scope', visible: false },
         { dataKey: 'Referenced_In_SAS', header: 'Referenced In SAS', visible: true },
         { dataKey: 'Referenced_In_TXT', header: 'Referenced In TXT', visible: true },
-        { dataKey: 'Referenced_In_Defects', header: 'Referenced In Defects', visible: true },
-        { dataKey: 'Referenced_In_Reqts', header: 'Referenced In Requirements', visible: true },
+        { dataKey: 'Referenced_In_Defects', header: 'Referenced In Defects', visible: false },
+        { dataKey: 'Referenced_In_Reqts', header: 'Referenced In Requirements', visible: false },
     ];
 
     // --- Event Listeners ---
@@ -73,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
     visualsBtn.addEventListener('click', updateDashboard);
     exportPdfBtn.addEventListener('click', exportToPDF);
     exportExcelBtn.addEventListener('click', exportToExcel);
-    toggleDashboardBtn.addEventListener('click', toggleDashboard);
     filterDefectsBtn.addEventListener('click', showOnlyWithDefects);
     filterReqtsBtn.addEventListener('click', showOnlyWithRequirements);
 
@@ -428,13 +417,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Dashboard & Chart Logic ---
     function updateDashboard() {
-        if (fullData.length === 0) return;
+        const filteredData = getFilteredData();
+        if (filteredData.length === 0) {
+            alert("No data to visualize. Please adjust your filters.");
+            return;
+        }
         dashboardModal.style.display = 'flex'; // Show modal
-        updateCharts();
+        updateCharts(filteredData);
     }
 
-    function updateCharts() {
-        const data = fullData;
+    function updateCharts(data) {
         const style = getComputedStyle(document.body);
         const colors = {
             primary: style.getPropertyValue('--primary-color').trim(),
@@ -467,29 +459,92 @@ document.addEventListener('DOMContentLoaded', () => {
             options: { responsive: true, plugins: { legend: { position: 'top' } } }
         });
 
+
+    
         // Chart 2: Top 5 Referenced SAS Files
         const sasFileCounts = new Map();
         data.forEach(row => {
             const sasFiles = row['Referenced_In_SAS'] || '';
             if (!sasFiles.toLowerCase().startsWith('not found') && sasFiles.toLowerCase() !== 'out of scope') {
                 sasFiles.split('; ').forEach(entry => {
-                    const fileName = entry.split(' (')[0];
-                    if (fileName.toLowerCase().endsWith('.sas')) {
-                        sasFileCounts.set(fileName, (sasFileCounts.get(fileName) || 0) + 1);
+                    const parts = entry.split('|');
+                    if (parts.length === 2) {
+                        const filePath = parts[0];
+                        // Extract just the filename from the full path
+                        const fileName = filePath.substring(Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/')) + 1);
+                        if (fileName.toLowerCase().endsWith('.sas')) {
+                            sasFileCounts.set(fileName, (sasFileCounts.get(fileName) || 0) + 1);
+                        }
                     }
                 });
             }
         });
         const sortedSasFiles = [...sasFileCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-        if (topFilesChart) topFilesChart.destroy();
+        console.log('SAS file counts:', sortedSasFiles); // Debug log
+
+        // Destroy previous chart instance if it exists
+        if (topFilesChart) {
+            topFilesChart.destroy();
+            topFilesChart = null;
+        }
+
+        // Create new chart instance
         topFilesChart = new Chart(topFilesChartCanvas, {
             type: 'bar',
             data: {
                 labels: sortedSasFiles.map(d => d[0]),
-                datasets: [{ label: 'Reference Count', data: sortedSasFiles.map(d => d[1]), backgroundColor: colors.primary }]
+                datasets: [{
+                    label: 'Reference Count',
+                    data: sortedSasFiles.map(d => d[1]),
+                    backgroundColor: colors.primary,
+                    borderColor: colors.primary,
+                    borderWidth: 1
+                }]
             },
-            options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Top 5 Referenced SAS Files',
+                        font: {
+                            size: 16
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0
+                        },
+                        title: {
+                            display: true,
+                            text: 'Reference Count'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            autoSkip: false,
+                            font: {
+                                size: 12
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'SAS File Name'
+                        }
+                    }
+                }
+            }
         });
+
 
         // Chart 3: Issue Coverage
         const withIssues = data.filter(row => {
@@ -508,11 +563,6 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             options: { responsive: true, plugins: { legend: { position: 'top' } } }
         });
-    }
-
-    function toggleDashboard() {
-        const isCollapsed = dashboardContainer.classList.toggle('collapsed');
-        toggleDashboardBtn.textContent = isCollapsed ? 'Expand' : 'Collapse';
     }
 
     // --- Export and Utility Functions ---

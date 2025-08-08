@@ -22,7 +22,7 @@
             <input type="file" id="file-upload" accept=".xlsx">
         </div>
         <div id="refresh-status" class="status-message"></div>
-
+        
         <!-- Dashboard Modal -->
         <div id="dashboard-modal" class="modal-overlay">
             <div class="modal-content">
@@ -34,15 +34,21 @@
                     <div id="dashboard-container" class="dashboard-container">
                         <div class="chart-card">
                             <h3>Article Support Status</h3>
-                            <canvas id="support-chart"></canvas>
+                            <div class="chart-wrapper">
+                                <canvas id="support-chart"></canvas>
+                            </div>
                         </div>
                         <div class="chart-card">
                             <h3>Top 5 Referenced SAS Files</h3>
-                            <canvas id="top-files-chart"></canvas>
+                            <div class="chart-wrapper">
+                                <canvas id="top-files-chart"></canvas>
+                            </div>
                         </div>
                         <div class="chart-card">
                             <h3>Issue Coverage (Defects/Reqts)</h3>
-                            <canvas id="issue-coverage-chart"></canvas>
+                            <div class="chart-wrapper">
+                                <canvas id="issue-coverage-chart"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
