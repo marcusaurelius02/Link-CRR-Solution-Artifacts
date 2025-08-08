@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consolidated CRR Report Viewer</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Consolidated CRR Report Viewer</h1>
+        <p>Upload your 'CRR_Full_Combined_Report.xlsx' file, filter the data, and export the results.</p>
+        
+        <div class="upload-section">
+            <button id="refresh-data-btn">Refresh Data (Run Pipeline)</button>
+            <label for="file-upload">Upload Excel File:</label>
+            <input type="file" id="file-upload" accept=".xlsx">
+        </div>
+        <div id="refresh-status" class="status-message"></div>
+
+        <!-- Dashboard Modal -->
+        <div id="dashboard-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div id="dashboard-wrapper">
+                    <div class="dashboard-header">
+                        <h2>Dashboard</h2>
+                        <button id="close-modal-btn" class="close-btn">&times;</button>
+                    </div>
+                    <div id="dashboard-container" class="dashboard-container">
+                        <div class="chart-card">
+                            <h3>Article Support Status</h3>
+                            <canvas id="support-chart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Top 5 Referenced SAS Files</h3>
+                            <canvas id="top-files-chart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Issue Coverage (Defects/Reqts)</h3>
+                            <canvas id="issue-coverage-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <!-- Hierarchical Filters -->
+            <div class="filter-group">
+                <label for="part-name-filter">Part Name:</label>
+                <select id="part-name-filter" class="filter-dropdown" disabled><option value="">-- Select --</option></select>
+            </div>
+            <div class="filter-group">
+                <label for="title-name-filter">Title Name:</label>
+                <select id="title-name-filter" class="filter-dropdown" disabled><option value="">-- Select --</option></select>
+            </div>
+            <div class="filter-group">
+                <label for="chapter-name-filter">Chapter Name:</label>
+                <select id="chapter-name-filter" class="filter-dropdown" disabled><option value="">-- Select --</option></select>
+            </div>
+            <div class="filter-group">
+                <label for="section-name-filter">Section Name:</label>
+                <select id="section-name-filter" class="filter-dropdown" disabled><option value="">-- Select --</option></select>
+            </div>
+            <!-- Text Search Filters -->
+            <div class="filter-group">
+                <label for="article-no-filter">Article Number:</label>
+                <input type="text" id="article-no-filter" class="filter-input" placeholder="Search..." disabled>
+            </div>
+            <div class="filter-group">
+                <label for="sas-file-filter">SAS File Name:</label>
+                <input type="text" id="sas-file-filter" class="filter-input" placeholder="Search..." disabled>
+            </div>
+            <div class="filter-group">
+                <label for="issue-id-filter">Defect or Reqt ID:</label>
+                <input type="text" id="issue-id-filter" class="filter-input" placeholder="Search..." disabled>
+            </div>
+            <!-- Column Toggle -->
+            <div class="filter-group">
+                <label>Show/Hide Columns:</label>
+                <div class="dropdown">
+                    <button id="column-toggle-btn" class="dropdown-btn" disabled>Select Columns</button>
+                    <div id="column-toggle-dropdown" class="dropdown-content"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="button-group">
+            <button id="filter-btn" disabled>Apply Filters</button>
+            <button id="reset-btn" disabled>Reset All</button>
+            <button id="filter-defects-btn" disabled>Show with Defects</button>
+            <button id="filter-reqts-btn" disabled>Show with Requirements</button>
+            <button id="export-pdf-btn" disabled>Export to PDF</button>
+            <button id="export-excel-btn" disabled>Export to Excel</button>
+            <button id="visuals-btn" disabled>Show Visuals</button>
+            <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02013R0575-20250101" target="_blank" class="btn-link">CRR Regulations</a>
+        </div>
+        
+        <div class="table-container">
+            <table id="data-table">
+                <thead>
+                    <tr><!-- Headers dynamically inserted by JS --></tr>
+                </thead>
+                <tbody>
+                    <!-- Data dynamically inserted by JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+    <div id="line-tooltip" class="tooltip"></div>
+</body>
+</html>
